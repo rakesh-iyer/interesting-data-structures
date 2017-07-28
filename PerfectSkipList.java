@@ -2,8 +2,8 @@ import java.util.*;
 
 class PerfectSkipList {
     int level;
-    Node start = new Node("", new Data());
-    Node end = new Node("LARGESTKEYEVER", new Data());
+    SkipListNode start = new SkipListNode("", new Data());
+    SkipListNode end = new SkipListNode("LARGESTKEYEVER", new Data());
     int size;
 
     PerfectSkipList() {
@@ -20,6 +20,10 @@ class PerfectSkipList {
             level = log(size);
             start.addLink(end);
         }
+    }
+
+    int getLevel() {
+        return level;
     }
 
     void decrementSize() {
@@ -46,27 +50,30 @@ class PerfectSkipList {
     }
 
     // either returns the node with the given key or the location after which to insert.
-    private Node searchInternal(String key) {
-        Node node = start;
+    private SkipListNode searchInternal(String key) {
+        SkipListNode node = start;
         int searchLevel = level;
+        int steps = 0;
 
         while (searchLevel >= 0) {
-            Node rightNode = node.getLink(searchLevel);
+            SkipListNode rightSkipListNode = node.getLink(searchLevel);
 
             if (node.getKey().equals(key)) {
-                return node;
-            } else if (rightNode.getKey().compareTo(key) <= 0) {
-                node = rightNode;
+                break;
+            } else if (rightSkipListNode.getKey().compareTo(key) <= 0) {
+                node = rightSkipListNode;
             } else {
                 searchLevel--;
             }
+            steps++;
         }
 
+        System.out.println(steps);
         return node;
     }
 
-    Node search(String key) {
-        Node node = searchInternal(key);
+    SkipListNode search(String key) {
+        SkipListNode node = searchInternal(key);
 
         if (node.getKey().equals(key)) {
             return node;
@@ -75,18 +82,18 @@ class PerfectSkipList {
         }
     }
 
-    void insertAfter(Node ins, Node curr, int level) {
-        Node next = curr.getLink(level);
+    void insertAfter(SkipListNode ins, SkipListNode curr, int level) {
+        SkipListNode next = curr.getLink(level);
 
         curr.setLink(ins, level);
         ins.addLink(next);
     }
 
-    void insert(Node ins) throws DuplicateKeyException {
+    void insert(SkipListNode ins) throws DuplicateKeyException {
         // insert in lowest level, then simply create higher levels on 1/2 principle.
-        Node prev = searchInternal(ins.getKey());
+        SkipListNode prev = searchInternal(ins.getKey());
         if (prev.getKey().equals(ins.getKey())) {
-            throw new DuplicateKeyException("Node " + ins + " has duplicate key");
+            throw new DuplicateKeyException("SkipListNode " + ins + " has duplicate key");
         }
 
         insertAfter(ins, prev, 0);
@@ -97,7 +104,7 @@ class PerfectSkipList {
     }
 
     void delete(String key) throws KeyNotFoundException {
-        Node del = search(key);
+        SkipListNode del = search(key);
 
         if (del == null) {
             throw new KeyNotFoundException("Cannot find node with key " + key);
@@ -107,16 +114,28 @@ class PerfectSkipList {
         // need a doubly linked list for log n time deletion.
     }
 
+    // ideally the algorithm should be
+    // record 2 insert operations. if deletes are few then just mark the nodes deleted without change to data structure.
+    // find the start and end indices of nodes at level 0 whose indices have modified as a result of inserts.
+    // this is the range of nodes that need to be updated throughout the levels.
     void rebuild() {
+        // basic implementation of perfect skip list.
+        for (SkipListNode node = start; node != end; node = node.getLink(0)) {
+            // need to clear out all higher level pointers for all nodes.
+            node.keepLink(0);
+        }
+
         int maxLevel = log(getSize());
-        for (int level = 1; level < maxLevel; level++) {
-            Node prevLevelCurr = start;
-            Node nextLevelCurr = start;
+        for (int level = 1; level <= maxLevel; level++) {
+            start.addLink(end);
+
+            SkipListNode prevLevelCurr = start;
+            SkipListNode nextLevelCurr = start;
 
             while (prevLevelCurr != end) {
-                Node next = prevLevelCurr.getLink(level-1);
+                SkipListNode next = prevLevelCurr.getLink(level-1);
 
-                if (next == end) {
+                if (next == end || next.getLink(level-1) == end) {
                     break;
                 }
 
@@ -128,9 +147,10 @@ class PerfectSkipList {
     }
 
     void print() {
+        System.out.println("In printing");
         for (int i = 0; i <= level; i++) {
             System.out.print("Level " + i + ": ");
-            for (Node node = start.getLink(i); node != end; node = node.getLink(i)) {
+            for (SkipListNode node = start.getLink(i); node != end; node = node.getLink(i)) {
                 System.out.print(node.getKey() + " ");
             }
             System.out.println();
@@ -141,8 +161,10 @@ class PerfectSkipList {
         PerfectSkipList psl = new PerfectSkipList();
 
         for (int i = 0; i < 100; i++) {
-            psl.insert(new Node("Key" + i, null));
+            psl.insert(new SkipListNode("Key" + i, null));
         }
         psl.print();
+
+        System.out.println(psl.search("Key38"));
     }
 }

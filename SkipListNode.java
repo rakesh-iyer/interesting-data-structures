@@ -1,16 +1,16 @@
 import java.util.*;
 
-class Node {
+class SkipListNode {
     String key;
     Data data;
-    List<Node> links = new ArrayList<>();
+    List<SkipListNode> links = new ArrayList<>();
 
-    Node(String key, Data data) {
+    SkipListNode(String key, Data data) {
         this.key = key;
         this.data = data;
     }
 
-    void addLink(Node node) {
+    void addLink(SkipListNode node) {
         links.add(node);
     }
 
@@ -18,11 +18,15 @@ class Node {
         links.remove(level);
     }
 
-    Node getLink(int level) {
+    void keepLink(int level) {
+        links = links.subList(0, level+1);
+    }
+
+    SkipListNode getLink(int level) {
         return links.get(level);
     }
 
-    Node setLink(Node node, int level) {
+    SkipListNode setLink(SkipListNode node, int level) {
         return links.set(level, node);
     }
 
