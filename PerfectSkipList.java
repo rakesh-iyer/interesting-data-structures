@@ -6,80 +6,43 @@ class PerfectSkipList {
     Node end = new Node("LARGESTKEYEVER", new Data());
     int size;
 
+    PerfectSkipList() {
+        start.addLink(end);
+    }
+
     int getSize() {
         return size;
     }
 
     void incrementSize() {
         size++;
+        if (log(size) > level) {
+            level = log(size);
+            start.addLink(end);
+        }
     }
 
     void decrementSize() {
         size--;
-    }
-
-    static class DuplicateKeyException extends Exception {
-        String exceptionString;
-
-        DuplicateKeyException(String exceptionString) {
-            this.exceptionString = exceptionString;
-        }
-
-        public String toString() {
-            return exceptionString;
+        if (log(size) > level) {
+            start.removeLink(level);
+            level = log(size);
         }
     }
 
-    static class KeyNotFoundException extends Exception {
-        String exceptionString;
-
-        KeyNotFoundException(String exceptionString) {
-            this.exceptionString = exceptionString;
+    static int log(int length) {
+        if (length == 0) {
+            throw new ArithmeticException("Log of 0 is invalid");
         }
 
-        public String toString() {
-            return exceptionString;
-        }
-    }
+        int bit;
 
-    void PerfectSkipList() {
-        start.links.add(end);
-        level = 0;
-    }
-
-    static class Data {
-        String data;
-
-        String getData() {
-            return data;
+        // find max 1 bit position.
+        for (bit = 0; length > 1; length >>= 1) {
+            bit++;
         }
 
-        void setData(String data) {
-            this.data = data;
-        }
-    }
-
-    static class Node {
-        String key;
-        List<Node> links = new ArrayList<>();
-        Data data;
-
-        Node(String key, Data data) {
-            this.key = key;
-            this.data = data;
-        }
-
-        void addLink(Node node) {
-            links.add(node);
-        }
-
-        String getKey() {
-            return key;
-        }
-
-        void setKey(String key) {
-            this.key = key;
-        }
+        return bit;
     }
 
     // either returns the node with the given key or the location after which to insert.
@@ -88,7 +51,7 @@ class PerfectSkipList {
         int searchLevel = level;
 
         while (searchLevel >= 0) {
-            Node rightNode = node.links.get(searchLevel);
+            Node rightNode = node.getLink(searchLevel);
 
             if (node.getKey().equals(key)) {
                 return node;
@@ -112,46 +75,11 @@ class PerfectSkipList {
         }
     }
 
-    int log(int length) {
-        if (length == 0) {
-            throw new ArithmeticException("Log of 0 is invalid");
-        }
+    void insertAfter(Node ins, Node curr, int level) {
+        Node next = curr.getLink(level);
 
-        int bit;
-
-        // find max 1 bit position.
-        for (bit = 0; length > 1; length >>= 2) {
-            bit++;
-        }
-
-        return bit;
-    }
-
-    void insert(Node ins, Node curr, int level) {
-        Node next = curr.links.get(level);
-
-        curr.links.set(level, ins);
-        ins.links.set(level, next);
-    }
-
-    void rebuild() {
-        int maxLevel = log(getSize());
-        for (int level = 1; level < maxLevel; level++) {
-            Node prevLevelCurr = start;
-            Node nextLevelCurr = start;
-
-            while (prevLevelCurr != end) {
-                Node next = prevLevelCurr.links.get(level-1);
-
-                if (next == end) {
-                    break;
-                }
-
-                insert(next, nextLevelCurr, level);
-                nextLevelCurr = next;
-                prevLevelCurr = next.links.get(level-1);
-            }
-        }
+        curr.setLink(ins, level);
+        ins.addLink(next);
     }
 
     void insert(Node ins) throws DuplicateKeyException {
@@ -161,7 +89,7 @@ class PerfectSkipList {
             throw new DuplicateKeyException("Node " + ins + " has duplicate key");
         }
 
-        insert(ins, prev, 0);
+        insertAfter(ins, prev, 0);
         incrementSize();
 
         // build all the higher levels again.
@@ -179,6 +107,42 @@ class PerfectSkipList {
         // need a doubly linked list for log n time deletion.
     }
 
-    public static void main(String args[]) {
+    void rebuild() {
+        int maxLevel = log(getSize());
+        for (int level = 1; level < maxLevel; level++) {
+            Node prevLevelCurr = start;
+            Node nextLevelCurr = start;
+
+            while (prevLevelCurr != end) {
+                Node next = prevLevelCurr.getLink(level-1);
+
+                if (next == end) {
+                    break;
+                }
+
+                insertAfter(next, nextLevelCurr, level);
+                nextLevelCurr = next;
+                prevLevelCurr = next.getLink(level-1);
+            }
+        }
+    }
+
+    void print() {
+        for (int i = 0; i <= level; i++) {
+            System.out.print("Level " + i + ": ");
+            for (Node node = start.getLink(i); node != end; node = node.getLink(i)) {
+                System.out.print(node.getKey() + " ");
+            }
+            System.out.println();
+        }
+    }
+
+    public static void main(String args[]) throws Exception {
+        PerfectSkipList psl = new PerfectSkipList();
+
+        for (int i = 0; i < 100; i++) {
+            psl.insert(new Node("Key" + i, null));
+        }
+        psl.print();
     }
 }
