@@ -53,7 +53,6 @@ class PerfectSkipList {
     private SkipListNode searchInternal(String key) {
         SkipListNode node = start;
         int searchLevel = level;
-        int steps = 0;
 
         while (searchLevel >= 0) {
             SkipListNode rightSkipListNode = node.getLink(searchLevel);
@@ -65,10 +64,8 @@ class PerfectSkipList {
             } else {
                 searchLevel--;
             }
-            steps++;
         }
 
-        System.out.println(steps);
         return node;
     }
 
@@ -89,6 +86,11 @@ class PerfectSkipList {
         ins.addLink(next);
     }
 
+    void removeNext(SkipListNode node, int level) {
+        SkipListNode del = node.getLink(level);
+        node.setLink(del.getLink(level), level);
+    }
+
     void insert(SkipListNode ins) throws DuplicateKeyException {
         // insert in lowest level, then simply create higher levels on 1/2 principle.
         SkipListNode prev = searchInternal(ins.getKey());
@@ -104,14 +106,33 @@ class PerfectSkipList {
     }
 
     void delete(String key) throws KeyNotFoundException {
-        SkipListNode del = search(key);
+        SkipListNode node = start;
+        SkipListNode prev = null;
+        int searchLevel = level;
+        boolean deleted = false;
 
-        if (del == null) {
+        while (searchLevel >= 0) {
+            SkipListNode rightSkipListNode = node.getLink(searchLevel);
+
+            if (node.getKey().equals(key)) {
+                deleted = true;
+                removeNext(prev, searchLevel);
+                node = prev;
+                searchLevel--;
+            } else if (rightSkipListNode.getKey().compareTo(key) <= 0) {
+                prev = node;
+                node = rightSkipListNode;
+            } else {
+                searchLevel--;
+            }
+        }
+
+        if (!deleted) {
             throw new KeyNotFoundException("Cannot find node with key " + key);
         }
 
-        // you will find the node at the highest level, so just follow lower link and delete from each level.
-        // need a doubly linked list for log n time deletion.
+        // The rebuild is inefficient and renders the above code redundant, but can be replaced later.
+        rebuild();
     }
 
     // ideally the algorithm should be
@@ -166,5 +187,10 @@ class PerfectSkipList {
         psl.print();
 
         System.out.println(psl.search("Key38"));
+
+        psl.delete("Key38");
+        psl.delete("Key58");
+        psl.delete("Key21");
+        psl.print();
     }
 }
