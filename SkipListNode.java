@@ -30,6 +30,10 @@ class SkipListNode {
         return links.set(level, node);
     }
 
+    int getLinkCount() {
+        return links.size();
+    }
+
     String getKey() {
         return key;
     }
