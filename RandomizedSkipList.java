@@ -5,7 +5,7 @@ class RandomizedSkipList extends SkipList {
     public void insert(SkipListNode ins) throws DuplicateKeyException {
         String key = ins.getKey();
         SkipListNode node = start;
-        int searchLevel = level;
+        int searchLevel = getLevel();
         Random r = new Random();
         Deque<SkipListNode> insertStack = new ArrayDeque<>();
 
@@ -22,17 +22,20 @@ class RandomizedSkipList extends SkipList {
             }
         }
 
-        System.out.println("Inserting at base level " + ins.getKey() + " to " + node.getKey());
+        node = insertStack.pop();
         insertAfter(ins, node, 0);
 
         searchLevel = 1;
-        while (insertStack.size() > 0 && r.nextInt(2) == 1) {
-            node = insertStack.pop();
-            if (node.getLinkCount() < searchLevel + 1) {
-                System.out.println("Adding extra link for " + node.getKey() + " as link count is " + node.getLinkCount() + " and search level is " + searchLevel);
-                node.addLink(end);
+        while (r.nextInt(2) == 1) {
+            if (searchLevel > getLevel()) {
+                addLevel();
             }
-            System.out.println("Inserting at search level " + searchLevel + " node - " + ins.getKey() + " at " + node.getKey());
+
+            if (insertStack.size() > 0) {
+                node = insertStack.pop();
+            } else {
+                node = start;
+            }
             insertAfter(ins, node, searchLevel++);
         }
         incrementSize();
@@ -41,7 +44,7 @@ class RandomizedSkipList extends SkipList {
     public void delete(String key) throws KeyNotFoundException {
         SkipListNode node = start;
         SkipListNode prev = null;
-        int searchLevel = level;
+        int searchLevel = getLevel();
         boolean deleted = false;
 
         while (searchLevel >= 0) {
@@ -64,7 +67,7 @@ class RandomizedSkipList extends SkipList {
     public static void main(String args[]) throws Exception {
         SkipList rsl = new RandomizedSkipList();
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 100; i++) {
             rsl.insert(new SkipListNode("Key" + i, null));
         }
         rsl.print();

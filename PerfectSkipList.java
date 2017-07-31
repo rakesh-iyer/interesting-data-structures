@@ -10,6 +10,10 @@ class PerfectSkipList extends SkipList {
 
         insertAfter(ins, prev, 0);
         incrementSize();
+        // do we need an extra level?
+        if (log(getSize()) > getLevel()) {
+            addLevel();
+        }
 
         // build all the higher levels again.
         rebuild();
@@ -18,7 +22,7 @@ class PerfectSkipList extends SkipList {
     public void delete(String key) throws KeyNotFoundException {
         SkipListNode node = start;
         SkipListNode prev = null;
-        int searchLevel = level;
+        int searchLevel = getLevel();
         boolean deleted = false;
 
         while (searchLevel >= 0) {

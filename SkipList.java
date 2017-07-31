@@ -1,5 +1,4 @@
 abstract class SkipList {
-    int level;
     SkipListNode start = new SkipListNode("", new Data());
     SkipListNode end = new SkipListNode("LARGESTKEYEVER", new Data());
     int size;
@@ -14,22 +13,18 @@ abstract class SkipList {
 
     void incrementSize() {
         size++;
-        if (log(size) > level) {
-            level = log(size);
-            start.addLink(end);
-        }
-    }
-
-    int getLevel() {
-        return level;
     }
 
     void decrementSize() {
         size--;
-        if (log(size) > level) {
-            start.removeLink(level);
-            level = log(size);
-        }
+    }
+
+    void addLevel() {
+        start.addLink(end);
+    }
+
+    int getLevel() {
+        return start.getLinkCount() - 1;
     }
 
     static int log(int length) {
@@ -62,7 +57,7 @@ abstract class SkipList {
     // either returns the node with the given key or the location after which to insert.
     protected SkipListNode searchInternal(String key) {
         SkipListNode node = start;
-        int searchLevel = level;
+        int searchLevel = getLevel();
 
         while (searchLevel >= 0) {
             SkipListNode rightSkipListNode = node.getLink(searchLevel);
@@ -91,7 +86,7 @@ abstract class SkipList {
 
     void print() {
         System.out.println("In printing");
-        for (int i = 0; i <= level; i++) {
+        for (int i = 0; i <= getLevel(); i++) {
             System.out.print("Level " + i + ": ");
             for (SkipListNode node = start.getLink(i); node != end; node = node.getLink(i)) {
                 System.out.print(node.getKey() + " ");
